@@ -1,0 +1,339 @@
+<html>
+<head>
+  <title>Moran Model Simulator</title>
+<style type="text/css">
+body {
+  background: #aaa;
+}
+
+svg {
+  background: #ccc;
+}
+
+* {
+  font-family: Helvetica, sans;
+}
+
+pre {
+  font-family: Menlo, Monaco, monospace;
+}
+
+label {
+  display: inline-block;
+  width: 8em;
+}
+
+#data {
+  display: -moz-box;
+  display: -webkit-box;
+  display: box;
+  flex-direction: lr;
+  width: 100%;
+}
+
+#data form {
+/*  display: inline-block;*/
+  min-width: 50%;
+  max-width: 50%;
+  width: 50%;
+}
+
+#data div {
+/*  display: inline-block;*/
+  min-width: 50%;
+  max-width: 50%;
+  width: 50%;
+}
+
+#profile-graph circle.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+#profile-graph line.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+#sid-chart {
+  margin-top: 2px;
+}
+
+#sid-chart path {
+  stroke: 88f;
+  stroke-width: 2;
+  fill: none;
+}
+
+</style>
+</head>
+<body>
+  <div id="profile-graph"></div>
+  <div id="sid-chart"></div>
+  <div id="data">
+    <form>
+      <label for="seed">Random seed: </label><input type="text" id="seed"><br>
+      <label for="population">Population: </label><input type="text" id="population"><br>
+      <label for="pmutation">P<sub>mutation</sub>: </label><input type="text" id="pmutation"><br>
+      <label for="precomb">P<sub>recomb</sub>: </label><input type="text" id="precomb"><br>
+      <label for="iterations">Iterations: </label><input type="text" id="iterations">
+      <input type="button" value="start!" onclick="javascript:init(false);">
+      <input type="button" value="start+iterate!" onclick="javascript:init(true);">
+      <input type="button" value="iterate!" onclick="javascript:iterate();"><br>
+      <input type="button" value="force.start!" onclick="javascript:force.start();">
+      <input type="button" value="redraw!" onclick="javascript:redraw();">
+      <input type="button" value="resize!" onclick="javascript:resize();">
+    </form>
+    <div id="stats">
+      <p>Iterations: <span id="totalIterations"></span></p>
+      <p>SID<sub>A</sub> = <span id="sid"></span></p>
+      <p>CI<sub>95%</sub> = <span id="ci95"></span></p>
+      <p>var<sub>SID</sub> = <span id="varsid"></span></p>
+    </div>
+  </div>
+  <pre id="profiles"></pre>
+<script type="text/javascript" src="d3.js"></script>
+<script type="text/javascript" src="d3.layout.js"></script>
+<script type="text/javascript" src="d3.geom.js"></script>
+<script type="text/javascript" src="random.js"></script>
+<script type="text/javascript" src="population.js"></script>
+<script type="text/javascript">
+
+// based on http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
+function parseQuery() {
+  return window.location.search.substring(1).split("&").reduce(function(map, param) {
+    var pair = param.split("=");
+    map[pair[0]] = unescape(pair[1]);
+    return map;
+    }, {});
+}
+
+var population;
+
+var w = 960,
+    h = 500, h2 = 100,
+    fill = d3.scale.category20();
+
+var vis = d3.select("#profile-graph")
+  .append("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+var g_scaling = vis.append("svg:g");
+var g_links   = g_scaling.append("svg:g").attr('id', 'links');
+var g_nodes   = g_scaling.append("svg:g").attr('id', 'nodes');
+
+var graph, nodes, links;
+
+var force, link, node;
+
+var sid_x, sid_y = d3.scale.linear().domain([0, h2]).range([0, h2]);
+
+var sid_chart = d3.select("#sid-chart")
+  .append("svg:svg")
+    .attr("width", w)
+    .attr("height", h2);
+
+var sid_g = sid_chart.append("svg:g")
+  .attr("transform", "translate(0, " + h2 + ")");
+
+var sid_line = d3.svg.line()
+    .x(function(d,i) { return sid_x(i); })
+    .y(function(d) { return -100 * sid_y(d); })
+
+function init(iterate) {
+  var random_seed     = parseInt(document.getElementById("seed").value, 10);
+  var population_size = parseInt(document.getElementById("population").value, 10);
+
+  if(population !== undefined) {
+    g_links.selectAll("line.link").remove();
+    g_nodes.selectAll("circle.node").remove();
+  }
+
+  population = new Population(population_size, new Random(random_seed));
+  if(iterate) {
+    runIterations();
+  }
+
+  showStats();
+
+  graph = population.graph();
+  nodes = graph.nodes;
+  links = graph.links;
+
+  force = d3.layout.force()
+      .charge(-120)
+      .linkDistance(30)
+      .nodes(nodes)
+      .links(links)
+      .size([w, h]);
+
+  force.on("tick", function() {
+      link.attr("x1", function(d) { if(d.source.x!=d.source.x) { d.source.x=w/2;d.source.y=h/2; };return d.source.x; })
+          .attr("y1", function(d) { return d.source.y; })
+          .attr("x2", function(d) { if(d.target.x!=d.target.x) { d.target.x=w/2;d.target.y=h/2; };return d.target.x; })
+          .attr("y2", function(d) { return d.target.y; });
+
+      node.attr("cx", function(d) { if(d.x!=d.x) { d.x=w/2;d.y=h/2; };return d.x; })
+          .attr("cy", function(d) { return d.y; });
+    });
+
+  redraw();
+
+  force.start();
+
+  vis.style("opacity", 1e-6)
+    .transition()
+      .duration(1000)
+      .style("opacity", 1);
+}
+
+
+
+function redraw() {
+  removed = []
+  g_links.selectAll("line.link")
+    .data(links, function(d) { return d.id; })
+    .exit()
+      .call(function(d) {
+        removed.push(d.toString());
+      })
+      .remove();
+
+  link = g_links.selectAll("line.link")
+      .data(links, function(d) { return d.id; })
+    .enter().append("svg:line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); })
+      .style("stroke", function(d) { return d.mutation ? '#800' : '#080'; })
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  removed = []
+  g_nodes.selectAll("circle.node")
+      .data(nodes, function(d) { return d.id; })
+    .exit()
+      .call(function(d) {
+        removed.push(d.toString());
+      })
+      .remove();
+
+  // all current nodes
+  g_nodes.selectAll("circle.node")
+    .attr("r", function(d) { return 2 * Math.sqrt(d.count); })
+    .transition()
+    .duration(1000);
+
+  // node => new nodes
+  node = g_nodes.selectAll("circle.node")
+      .data(nodes, function(d) { return d.id; })
+    .enter().append("svg:circle")
+      .attr("class", "node")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .attr("r", function(d) { return 2 * Math.sqrt(d.count); })
+      .style("fill", function(d) { return fill(d.group); })
+      .call(force.drag);
+
+  node.append("svg:title");
+
+  // all current nodes
+  titles = [];
+  g_nodes.selectAll("circle.node")
+    .selectAll("title")
+    .text(function(d) { var title = d.id + " (#" + d.count + "): " + d.key; titles.push(title); return title; });
+
+  link = g_links.selectAll("line.link");
+  node = g_nodes.selectAll("circle.node");
+
+  var sid_history = population.sidHistory();
+  sid_x = d3.scale.linear().domain([0, Math.max(99, sid_history.length-1)]).range([0, w]);
+  sid_g.selectAll("path").remove();
+  sid_g.append("svg:path").attr("d", sid_line(sid_history));
+}
+
+function runIterations() {
+  var mutationProbability = parseFloat(document.getElementById("pmutation").value);
+  var recombProbability   = parseFloat(document.getElementById("precomb").value);
+  var iterations          = parseInt(document.getElementById("iterations").value, 10);
+  for(var i=0; i<iterations; i++) {
+    population.generationStep(mutationProbability, recombProbability, population.size());
+  }
+}
+
+function iterate() {
+  runIterations();
+
+  showStats();
+
+  redraw();
+  force.start();
+}
+
+function showStats() {
+  var stats = population.stats();
+  document.getElementById("totalIterations").innerHTML = stats.totalIterations;
+  document.getElementById("sid").innerHTML = stats.SID.toPrecision(5);
+  document.getElementById("ci95").innerHTML = "[" + stats.CI95.map(function(e) { return e.toPrecision(5); }).join(', ') + "]";
+  document.getElementById("varsid").innerHTML = stats.varSID.toPrecision(5);
+
+  document.getElementById("profiles").innerHTML = population.toCountsString();
+}
+
+function resize() {
+  if(nodes === undefined || nodes.length == 0) {
+    return;
+  }
+
+  var minx = nodes[0].x, miny = nodes[0].y,
+      maxx = nodes[0].x, maxy = nodes[0].y;
+
+  for(var i=0; i<nodes.length; i++) {
+    var d = nodes[i];
+    minx = Math.min(d.x,minx); maxx = Math.max(d.x,maxx);
+    miny = Math.min(d.y,miny); maxy = Math.max(d.y,maxy);
+  }
+
+  minx = w/2 - minx; maxx = maxx - w/2;
+  miny = h/2 - miny; maxy = maxy - h/2;
+
+  maxx = Math.max(minx, maxx);
+  maxy = Math.max(miny, maxy);
+  
+  var sx = 0.5 * w / maxx;
+  var sy = 0.5 * h / maxy;
+  var s = 0.9 * Math.min(sx, sy);
+
+  g_scaling.attr("transform",
+                 "translate(" + w/2 + "," + h/2 + ")" + " " +
+                 "scale(" + s + ")" + " " +
+                 "translate(-" + w/2 + ",-" + h/2 + ")");
+}
+
+(function() {
+  var params = parseQuery();
+
+  var random_seed         = parseInt  (params["seed"      ] ||    42);
+  var population_size     = parseInt  (params["population"] ||   100);
+  var mutationProbability = parseFloat(params["pmutation" ] || 0.008);
+  var recombProbability   = parseFloat(params["precomb"   ] || 0.001);
+  var iterations          = parseInt  (params["iterations"] ||  1000);
+
+  document.getElementById("seed"      ).value = random_seed;
+  document.getElementById("population").value = population_size;
+  document.getElementById("pmutation" ).value = mutationProbability;
+  document.getElementById("precomb"   ).value = recombProbability;
+  document.getElementById("iterations").value = iterations;
+
+  if(params.init !== undefined) {
+    init(false);
+  } else if(params.go !== undefined) {
+    init(true);
+  }
+})();
+
+</script>
+</body>
+</html>
