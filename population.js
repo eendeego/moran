@@ -38,7 +38,6 @@ var Population = function(populationSize, random) {
     var gene_info = gene_pool[gene_key];
     if(gene_pool[gene_key] === undefined) {
       gene_info = gene_pool[gene_key] = {
-          first_individual: obj,
           key: gene_key,
           gene: gene,
           count: 0,
@@ -57,6 +56,7 @@ var Population = function(populationSize, random) {
     } else {
       if(parent !== undefined) {
         if(gene_info.parent === undefined) {
+          delete parent.dp;
           gene_info.parent = parent;
         } else {
           delete parent.dp;
