@@ -39,11 +39,9 @@ var Population = function(populationSize, random) {
       }
     }
 
-    var key = function() {
-      return gene.toString();
-    }
+    var key = gene.toString();
 
-    var gene_key = key();
+    var gene_key = key;
     var gene_info = gene_pool[gene_key];
     if(gene_pool[gene_key] === undefined) {
       gene_info = gene_pool[gene_key] = {
@@ -100,14 +98,6 @@ var Population = function(populationSize, random) {
       }
     }
 
-    var id = function() {
-      return gene_info.id;
-    }
-
-    var showId = function() {
-      alert("individual #" +  id + ": " + gene.toString());
-    }
-
     var mutatingClone = function(mutationProbability, recombinationProbability) {
       var newGene = gene.slice(0); // Clone
       var parent = {};
@@ -147,21 +137,14 @@ var Population = function(populationSize, random) {
       }
     }
 
-    var parent = function() {
-      return parent;
-    }
-
-    var toString = function() {
-      return "{Individual: #" + id + ", gene=[" + gene.toString() + "]}";
-    }
-
-    obj.key           = key;
-    obj.id            = id;
-    obj.showId        = showId;
+    obj.key           = function() { return key; }
+    obj.id            = function() { return gene_info.id; };
     obj.mutatingClone = mutatingClone,
     obj.kill          = kill;
-    obj.parent        = parent;
-    obj.toString      = toString;
+    obj.parent        = function() { return parent; };
+    obj.toString      = function() {
+        return "{Individual: #" + id + ", gene=[" + gene.toString() + "]}";
+      };
 
     return obj;
   };
