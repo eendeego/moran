@@ -15,8 +15,17 @@ var Population = function(populationSize, random) {
 
   var live_set = [];
   var links = [];
+  var link_map = {};
 
   var sid_history = [0];
+
+  var linkId = function(source, target) {
+    if(source < target) {
+      return source + "-" + target;
+    } else {
+      return target + "-" + source;
+    }
+  }
 
   var Individual = function(gene, parent) {
     var obj = {};
@@ -34,7 +43,7 @@ var Population = function(populationSize, random) {
       return gene.toString();
     }
 
-    gene_key = key();
+    var gene_key = key();
     var gene_info = gene_pool[gene_key];
     if(gene_pool[gene_key] === undefined) {
       gene_info = gene_pool[gene_key] = {
@@ -60,8 +69,8 @@ var Population = function(populationSize, random) {
           gene_info.parent = parent;
         } else {
           delete parent.dp;
-          for(key in parent) {
-            gene_info.parent[key] = parent[key];
+          for(var k in parent) {
+            gene_info.parent[k] = parent[k];
           }
         }
       }
@@ -70,12 +79,23 @@ var Population = function(populationSize, random) {
       live_set.push(gene_info);
       if(parent !== undefined) {
         delete parent.dp;
-        for(key in parent) {
-          links.push({ source: gene_pool[key],
-                       target: gene_info,
-                       mutation: parent[key],
-                       id: key + "-" + gene_key,
-                       value: 10 });
+        for(var k in parent) {
+          var id = linkId(gene_info.key, k);
+          var link = link_map[id];
+
+          if(link === undefined) {
+            link = { source: gene_pool[k],
+                     target: gene_info,
+                     mutation: parent[k],
+                     id: id,
+                     value: 1 };
+            link_map[id] = link;
+            links.push(link);
+          } else {
+            console.log("Already known: " + link.id);
+            link.value++;
+            //alert("aaaaaaaaaaaaa")
+          }
         }
       }
     }
@@ -119,7 +139,8 @@ var Population = function(populationSize, random) {
         }
 
         for(var i=links.length-1; i>=0; i--) {
-          if(links[i].source == gene_info || links[i].target == gene_info) {
+          if(links[i].source === gene_info || links[i].target === gene_info) {
+            delete link_map[links[i].id];
             links.splice(i, 1);
           }
         }

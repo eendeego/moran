@@ -204,12 +204,29 @@ function redraw() {
       .data(links, function(d) { return d.id; })
     .enter().append("svg:line")
       .attr("class", "link")
-      .style("stroke-width", function(d) { return Math.sqrt(d.value); })
-      .style("stroke", function(d) { return d.mutation ? '#800' : '#080'; })
+      .style("stroke-width", "1") // placeholder
+      .style("stroke", "#fff")    // placeholder
       .attr("x1", function(d) { return d.source.x; })
       .attr("y1", function(d) { return d.source.y; })
       .attr("x2", function(d) { return d.target.x; })
       .attr("y2", function(d) { return d.target.y; });
+
+  // all current links
+  g_links.selectAll("line.link")
+    .style("stroke-width", function(d) {
+      if(d.value !== 1) {
+        return d.value * 3;
+      } else {
+        return d.value * 3;
+      };
+    })
+    .style("stroke", function(d) {
+      if(d.value !== 1) {
+        return d.mutation ? 'hsl(0,100%,50%)' : 'hsl(120,50%,' + Math.min(100, 40 + d.value * 10) + '%)';
+      } else {
+        return d.mutation ? 'hsl(0,100%,50%)' : 'hsl(120,50%,' + Math.min(100, 40 + d.value * 10) + '%)';
+      }
+    });
 
   removed = []
   g_nodes.selectAll("circle.node")
