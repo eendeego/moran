@@ -31,14 +31,6 @@ var Population = function(populationSize, random) {
     var obj = {};
     var id = ++populationCount;
 
-    if(gene === undefined) {
-      gene = new Array(7);
-
-      for(var i=0; i<GENE_SIZE; i++) {
-        gene[i]=1;
-      }
-    }
-
     var key = gene.toString();
 
     var gene_key = key;
@@ -149,8 +141,11 @@ var Population = function(populationSize, random) {
     return obj;
   };
 
+  var initial_gene = new Array(7);
+  for(var i=0; i<GENE_SIZE; i++) { initial_gene[i]=1; }
+
   var population = new Array(populationSize);
-  for(var i=0; i<populationSize; i++) { population[i] = new Individual(); }
+  for(var i=0; i<populationSize; i++) { population[i] = new Individual(initial_gene); }
 
   var sid;
 
