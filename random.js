@@ -26,7 +26,7 @@ Random = (function() {
     }
 
     var nextFloat = function() {
-      return Math.abs(next() * 1.0 / 0xffffffff);
+      return (next() & 0x7fffffff) * 1.0 / 0x3fffffff;
     }
 
     return {
