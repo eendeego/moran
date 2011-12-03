@@ -1,7 +1,7 @@
 var Individual = (function() {
   var populationCount = 0;
 
-  return function(gene, parent) {
+  return function(gene, origin) {
     var id = ++populationCount;
     var key = gene.toString();
 
@@ -9,7 +9,7 @@ var Individual = (function() {
       id: function() { return id; },
       key: function() { return key; },
       gene: function() { return gene; },
-      parent: function() { return parent; },
+      origin: function() { return origin; },
       toString: function() {
         return "{Individual: #" + id + ", gene=[" + key + "]}";
       }

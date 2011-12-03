@@ -28,7 +28,7 @@ var Population = function(populationSize, random) {
 
   function notifyNewIndividual(individual) {
     var key = individual.key();
-    var parent = individual.parent();
+    var origin = individual.origin();
     var profileInfo = profileInfoMap[key];
     if(profileInfoMap[key] === undefined) {
       // New profile
@@ -38,11 +38,11 @@ var Population = function(populationSize, random) {
           gene: individual.gene(),
           count: 0,
           id: totalProfileCount,
-          parent: parent,
+          origin: origin,
           toString: function() { return this.id + " (#" + this.count + "): " + this.key; }
         };
-      if(parent !== undefined) {
-        parentNode = profileInfoMap[parent.dp];
+      if(origin !== undefined) {
+        parentNode = profileInfoMap[origin.clonedIndividual];
         var newAngle = random.nextFloat() * Math.PI * 2;
         var newDist = 10 + random.nextFloat() * 30;
         profileInfo.x = (parentNode.x || 0) + newDist * Math.cos(newAngle);
@@ -50,28 +50,26 @@ var Population = function(populationSize, random) {
       }
     } else {
       // Already existing profile
-      if(parent !== undefined) {
-        delete parent.dp;
-        if(profileInfo.parent === undefined) {
-          profileInfo.parent = {};
+      if(origin !== undefined) {
+        if(profileInfo.origin === undefined) {
+          profileInfo.origin = { individuals: {} };
         }
-        for(var k in parent) {
-          profileInfo.parent[k] = parent[k];
+        for(var k in origin.individuals) {
+          profileInfo.origin.individuals[k] = origin.individuals[k];
         }
       }
     }
     if(++profileInfo.count === 1) {
       liveSet.push(profileInfo);
-      if(parent !== undefined) {
-        delete parent.dp;
-        for(var k in parent) {
+      if(origin !== undefined) {
+        for(var k in origin.individuals) {
           var id = linkId(profileInfo.key, k);
           var link = linkMap[id];
 
           if(link === undefined) {
             link = { source: profileInfoMap[k],
                      target: profileInfo,
-                     mutation: parent[k],
+                     mutation: origin.individuals[k],
                      id: id,
                      value: 1 };
             linkMap[id] = link;
@@ -103,9 +101,10 @@ var Population = function(populationSize, random) {
     var profileInfo = profileInfoMap[key];
     // TODO: Optimization: Only clone if necessary
     var newGene = profileInfo.gene.slice(0); // Clone
-    var parent = { dp: key };
+    var originIndividuals = {};
+    var origin = { clonedIndividual: key, individuals: originIndividuals };
 
-    parent[key] = true;
+    originIndividuals[key] = true;
     for(var i=0; i<GENE_SIZE; i++) {
       var god = random.nextFloat();
       if(god < mutationProbability) {
@@ -113,10 +112,10 @@ var Population = function(populationSize, random) {
       } else if(god < mutationProbability + recombinationProbability) {
         var sourceIndividual = population[random.nextIntCapped(populationSize)];
         newGene[i] = sourceIndividual.gene()[i];
-        parent[sourceIndividual.key()] = false;
+        originIndividuals[sourceIndividual.key()] = false;
       }
     }
-    return new Individual(newGene, parent);
+    return new Individual(newGene, origin);
   }
 
   function kill(individual) {
