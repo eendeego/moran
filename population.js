@@ -33,12 +33,11 @@ var Population = function(populationSize, random) {
 
     var key = gene.toString();
 
-    var gene_key = key;
-    var gene_info = gene_pool[gene_key];
-    if(gene_pool[gene_key] === undefined) {
+    var gene_info = gene_pool[key];
+    if(gene_pool[key] === undefined) {
       total_profile_count++;
-      gene_info = gene_pool[gene_key] = {
-          key: gene_key,
+      gene_info = gene_pool[key] = {
+          key: key,
           gene: gene,
           count: 0,
           id: total_profile_count,
@@ -93,8 +92,8 @@ var Population = function(populationSize, random) {
     var mutatingClone = function(mutationProbability, recombinationProbability) {
       var newGene = gene.slice(0); // Clone
       var parent = {};
-      parent.dp = gene_key;
-      parent[gene_key] = true;
+      parent.dp = key;
+      parent[key] = true;
       for(var i=0; i<GENE_SIZE; i++) {
         var god = random.nextFloat();
         if(god < mutationProbability) {
