@@ -7,7 +7,7 @@ var Population = function(populationSize, random) {
   var totalIterations = 0;
 
   var gene_pool      = {};
-  var gene_pool_keys = [];
+  var total_profile_count = 0;
 
   var GENE_SIZE = 7;
   var geneCounts = new Array(GENE_SIZE);
@@ -36,15 +36,15 @@ var Population = function(populationSize, random) {
     var gene_key = key;
     var gene_info = gene_pool[gene_key];
     if(gene_pool[gene_key] === undefined) {
+      total_profile_count++;
       gene_info = gene_pool[gene_key] = {
           key: gene_key,
           gene: gene,
           count: 0,
-          id: gene_pool_keys.length,
+          id: total_profile_count,
           parent: parent,
           toString: function() { return this.id + " (#" + this.count + "): " + this.key; }
         };
-      gene_pool_keys.push(gene_key);
       if(parent !== undefined) {
         parent_node = gene_pool[parent.dp];
         var new_angle = random.nextFloat() * Math.PI * 2;
