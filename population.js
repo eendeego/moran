@@ -111,9 +111,9 @@ var Population = function(populationSize, random) {
       if(god < mutationProbability) {
         newGene[i] = ++geneCounts[i];
       } else if(god < mutationProbability + recombinationProbability) {
-        var sourceProfile = random.nextIntCapped(liveSet.length);
-        newGene[i] = liveSet[sourceProfile].gene[i];
-        parent[liveSet[sourceProfile].key] = false;
+        var sourceIndividual = population[random.nextIntCapped(populationSize)];
+        newGene[i] = sourceIndividual.gene()[i];
+        parent[sourceIndividual.key()] = false;
       } else {
         newGene[i] = newGene[i];
       }
