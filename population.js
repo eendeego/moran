@@ -114,8 +114,6 @@ var Population = function(populationSize, random) {
         var sourceIndividual = population[random.nextIntCapped(populationSize)];
         newGene[i] = sourceIndividual.gene()[i];
         parent[sourceIndividual.key()] = false;
-      } else {
-        newGene[i] = newGene[i];
       }
     }
     return new Individual(newGene, parent);
