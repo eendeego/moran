@@ -89,49 +89,8 @@ var Population = function(populationSize, random) {
       }
     }
 
-    var mutatingClone = function(mutationProbability, recombinationProbability) {
-      var newGene = gene.slice(0); // Clone
-      var parent = {};
-      parent.dp = key;
-      parent[key] = true;
-      for(var i=0; i<GENE_SIZE; i++) {
-        var god = random.nextFloat();
-        if(god < mutationProbability) {
-          newGene[i] = ++geneCounts[i];
-        } else if(god < mutationProbability + recombinationProbability) {
-          var source_profile = random.nextIntCapped(live_set.length);
-          newGene[i] = live_set[source_profile].gene[i];
-          parent[live_set[source_profile].key] = false;
-        } else {
-          newGene[i] = newGene[i];
-        }
-      }
-      return new Individual(newGene, parent);
-    }
-
-    var kill = function() {
-      if(--gene_info.count === 0) {
-        // TODO Optimize this (if at all possible)
-        for(var i=0; i<live_set.length; i++) {
-          if(live_set[i].id === gene_info.id) {
-            live_set.splice(i, 1);
-            break;
-          }
-        }
-
-        for(var i=links.length-1; i>=0; i--) {
-          if(links[i].source === gene_info || links[i].target === gene_info) {
-            delete link_map[links[i].id];
-            links.splice(i, 1);
-          }
-        }
-      }
-    }
-
     obj.key           = function() { return key; }
     obj.id            = function() { return gene_info.id; };
-    obj.mutatingClone = mutatingClone,
-    obj.kill          = kill;
     obj.parent        = function() { return parent; };
     obj.toString      = function() {
         return "{Individual: #" + id + ", gene=[" + gene.toString() + "]}";
@@ -148,6 +107,49 @@ var Population = function(populationSize, random) {
 
   var sid;
 
+  function mutatingClone(individual, mutationProbability, recombinationProbability) {
+    var key = individual.key();
+    var gene_info = gene_pool[key];
+    // TODO: Optimization: Only clone if necessary
+    var newGene = gene_info.gene.slice(0); // Clone
+    var parent = { dp: key };
+
+    parent[key] = true;
+    for(var i=0; i<GENE_SIZE; i++) {
+      var god = random.nextFloat();
+      if(god < mutationProbability) {
+        newGene[i] = ++geneCounts[i];
+      } else if(god < mutationProbability + recombinationProbability) {
+        var source_profile = random.nextIntCapped(live_set.length);
+        newGene[i] = live_set[source_profile].gene[i];
+        parent[live_set[source_profile].key] = false;
+      } else {
+        newGene[i] = newGene[i];
+      }
+    }
+    return new Individual(newGene, parent);
+  }
+
+  function kill(individual) {
+    var gene_info = gene_pool[individual.key()];
+    if(--gene_info.count === 0) {
+      // TODO Optimize this (if at all possible)
+      for(var i=0; i<live_set.length; i++) {
+        if(live_set[i].id === gene_info.id) {
+          live_set.splice(i, 1);
+          break;
+        }
+      }
+
+      for(var i=links.length-1; i>=0; i--) {
+        if(links[i].source === gene_info || links[i].target === gene_info) {
+          delete link_map[links[i].id];
+          links.splice(i, 1);
+        }
+      }
+    }
+  }
+
   var generationStep = function(mutationProbability, recombinationProbability, sidHistoryCycle) {
     var killed  = random.nextIntCapped(populationSize);
     var doubled = random.nextIntCapped(populationSize - 1);
@@ -155,8 +157,8 @@ var Population = function(populationSize, random) {
 
     //console.log("Killed: " + killed + " - Doubled: " + doubled);
 
-    population.push(population[doubled].mutatingClone(mutationProbability, recombinationProbability));
-    population.splice(killed, 1)[0].kill();
+    population.push(mutatingClone(population[doubled], mutationProbability, recombinationProbability));
+    kill(population.splice(killed, 1)[0]);
 
     totalIterations++;
     if(sidHistoryCycle !== undefined) {
