@@ -98,6 +98,7 @@ label {
 <script type="text/javascript" src="random.js"></script>
 <script type="text/javascript" src="individual.js"></script>
 <script type="text/javascript" src="population.js"></script>
+<script type="text/javascript" src="profile-tracker.js"></script>
 <script type="text/javascript">
 
 // based on http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
@@ -110,6 +111,7 @@ function parseQuery() {
 }
 
 var population;
+var profileTracker;
 
 var w = 960,
     h = 500, h2 = 100,
@@ -152,6 +154,7 @@ function init(iterate) {
   }
 
   population = new Population(population_size, new Random(random_seed));
+  profileTracker = new ProfileTracker(population);
   if(iterate) {
     runIterations();
   }

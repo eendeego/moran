@@ -3,6 +3,8 @@ var Population = function(populationSize, random) {
     random = new Random();
   }
 
+  var listeners = { birth: [], death: [] };
+
   var totalIterations = 0;
 
   var profileInfoMap = {};
@@ -27,6 +29,10 @@ var Population = function(populationSize, random) {
   }
 
   function notifyNewIndividual(individual) {
+    listeners.birth.map(function(callback) {
+      callback(individual);
+    });
+
     var key = individual.key();
     var origin = individual.origin();
     var profileInfo = profileInfoMap[key];
@@ -119,6 +125,10 @@ var Population = function(populationSize, random) {
   }
 
   function kill(individual) {
+    listeners.death.map(function(callback) {
+      callback(individual);
+    });
+
     var profileInfo = profileInfoMap[individual.key()];
     if(--profileInfo.count === 0) {
       // TODO Optimize this (if at all possible)
@@ -159,6 +169,14 @@ var Population = function(populationSize, random) {
         sidHistory.push(sid());
       }
     }
+  };
+
+  var on = function(event, callback) {
+    if(event !== 'birth' && event !== 'death') {
+      throw new Exception('Unknown event: "' + event + '"');
+    }
+
+    listeners[event].push(callback);
   };
 
   var graph = function() {
@@ -238,6 +256,7 @@ var Population = function(populationSize, random) {
     totalIterations: function() { return totalIterations; },
     sidHistory: function() { return sidHistory; },
     generationStep: generationStep,
+    on: on,
     graph: graph,
     toString: toString,
     toCountsString: toCountsString,
