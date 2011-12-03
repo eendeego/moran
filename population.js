@@ -44,17 +44,25 @@ var Population = function(populationSize, random) {
 
   function mutatingClone(individual, mutationProbability, recombinationProbability) {
     var key = individual.key();
-    // TODO: Optimization: Only clone if necessary
-    var newGene = individual.gene().slice(0); // Clone
+    var gene = individual.gene();
+    var newGene = gene;
     var originIndividuals = {};
     var origin = { clonedIndividual: key, individuals: originIndividuals };
+
+    function cloneGene() {
+      if(newGene === gene) {
+        newGene = gene.slice(0); // Clone
+      }
+    }
 
     originIndividuals[key] = true;
     for(var i=0; i<GENE_SIZE; i++) {
       var god = random.nextFloat();
       if(god < mutationProbability) {
+        cloneGene();
         newGene[i] = ++geneCounts[i];
       } else if(god < mutationProbability + recombinationProbability) {
+        cloneGene();
         var sourceIndividual = population[random.nextIntCapped(populationSize)];
         newGene[i] = sourceIndividual.gene()[i];
         originIndividuals[sourceIndividual.key()] = false;
