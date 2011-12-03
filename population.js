@@ -28,9 +28,7 @@ var Population = function(populationSize, random) {
   }
 
   var Individual = function(gene, parent) {
-    var obj = {};
     var id = ++populationCount;
-
     var key = gene.toString();
 
     var gene_info = gene_pool[key];
@@ -89,14 +87,14 @@ var Population = function(populationSize, random) {
       }
     }
 
-    obj.key           = function() { return key; }
-    obj.id            = function() { return gene_info.id; };
-    obj.parent        = function() { return parent; };
-    obj.toString      = function() {
-        return "{Individual: #" + id + ", gene=[" + gene.toString() + "]}";
-      };
-
-    return obj;
+    return {
+      key: function() { return key; },
+      id: function() { return id; },
+      parent: function() { return parent; },
+      toString: function() {
+        return "{Individual: #" + id + ", gene=[" + key + "]}";
+      }
+    };
   };
 
   var initial_gene = new Array(7);
