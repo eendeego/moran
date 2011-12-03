@@ -36,7 +36,7 @@ var Population = function(populationSize, random) {
     for(var i=0; i<GENE_SIZE; i++) { initialAllelicProfile[i]=1; }
 
     for(var i=0; i<populationSize; i++) {
-      var individual = new Individual(initialAllelicProfile);
+      var individual = new Individual(totalIterations, initialAllelicProfile);
       population[i] = individual;
       notifyBirth(individual);
     }
@@ -60,7 +60,7 @@ var Population = function(populationSize, random) {
         originIndividuals[sourceIndividual.key()] = false;
       }
     }
-    return new Individual(newGene, origin);
+    return new Individual(totalIterations, newGene, origin);
   }
 
   var generationStep = function(mutationProbability,
