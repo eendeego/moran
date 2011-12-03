@@ -3,7 +3,6 @@ var Population = function(populationSize, random) {
     random = new Random();
   }
 
-  var populationCount = 0;
   var totalIterations = 0;
 
   var gene_pool      = {};
@@ -27,16 +26,16 @@ var Population = function(populationSize, random) {
     }
   }
 
-  var Individual = function(gene, parent) {
-    var id = ++populationCount;
-    var key = gene.toString();
-
+  function notifyNewIndividual(individual) {
+    var key = individual.key();
+    var parent = individual.parent();
     var gene_info = gene_pool[key];
     if(gene_pool[key] === undefined) {
+      // New profile
       total_profile_count++;
       gene_info = gene_pool[key] = {
           key: key,
-          gene: gene,
+          gene: individual.gene(),
           count: 0,
           id: total_profile_count,
           parent: parent,
@@ -50,15 +49,14 @@ var Population = function(populationSize, random) {
         gene_info.y = (parent_node.y || 0) + new_dist * Math.sin(new_angle);
       }
     } else {
+      // Already existing profile
       if(parent !== undefined) {
+        delete parent.dp;
         if(gene_info.parent === undefined) {
-          delete parent.dp;
-          gene_info.parent = parent;
-        } else {
-          delete parent.dp;
-          for(var k in parent) {
-            gene_info.parent[k] = parent[k];
-          }
+          gene_info.parent = {};
+        }
+        for(var k in parent) {
+          gene_info.parent[k] = parent[k];
         }
       }
     }
@@ -86,22 +84,17 @@ var Population = function(populationSize, random) {
         }
       }
     }
-
-    return {
-      key: function() { return key; },
-      id: function() { return id; },
-      parent: function() { return parent; },
-      toString: function() {
-        return "{Individual: #" + id + ", gene=[" + key + "]}";
-      }
-    };
-  };
+  }
 
   var initial_gene = new Array(7);
   for(var i=0; i<GENE_SIZE; i++) { initial_gene[i]=1; }
 
   var population = new Array(populationSize);
-  for(var i=0; i<populationSize; i++) { population[i] = new Individual(initial_gene); }
+  for(var i=0; i<populationSize; i++) {
+    var newIndividual = new Individual(initial_gene);
+    population[i] = newIndividual;
+    notifyNewIndividual(newIndividual);
+  }
 
   var sid;
 
@@ -148,14 +141,19 @@ var Population = function(populationSize, random) {
     }
   }
 
-  var generationStep = function(mutationProbability, recombinationProbability, sidHistoryCycle) {
+  var generationStep = function(mutationProbability,
+                                recombinationProbability,
+                                sidHistoryCycle) {
     var killed  = random.nextIntCapped(populationSize);
     var doubled = random.nextIntCapped(populationSize - 1);
     if(doubled >= killed) { doubled++; }
 
-    //console.log("Killed: " + killed + " - Doubled: " + doubled);
-
-    population.push(mutatingClone(population[doubled], mutationProbability, recombinationProbability));
+    var newIndividual =
+      mutatingClone(population[doubled],
+                    mutationProbability,
+                    recombinationProbability);
+    notifyNewIndividual(newIndividual);
+    population.push(newIndividual);
     kill(population.splice(killed, 1)[0]);
 
     totalIterations++;
