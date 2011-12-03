@@ -153,15 +153,16 @@ function init(iterate) {
     g_nodes.selectAll("circle.node").remove();
   }
 
-  population = new Population(population_size, new Random(random_seed));
-  profileTracker = new ProfileTracker(population);
-  if(iterate) {
-    runIterations();
-  }
+  var random = new Random(random_seed);
+  population = new Population(population_size, random);
+  profileTracker = new ProfileTracker(population, population_size, random);
+
+  population.initialize();
+  if(iterate) { runIterations(); }
 
   showStats();
 
-  graph = population.graph();
+  graph = profileTracker.graph();
   nodes = graph.nodes;
   links = graph.links;
 
@@ -269,7 +270,7 @@ function redraw() {
   link = g_links.selectAll("line.link");
   node = g_nodes.selectAll("circle.node");
 
-  var sid_history = population.sidHistory();
+  var sid_history = profileTracker.sidHistory();
   sid_x = d3.scale.linear().domain([0, Math.max(99, sid_history.length-1)]).range([0, w]);
   sid_g.selectAll("path").remove();
   sid_g.append("svg:path").attr("d", sid_line(sid_history));
@@ -280,7 +281,7 @@ function runIterations() {
   var recombProbability   = parseFloat(document.getElementById("precomb").value);
   var iterations          = parseInt(document.getElementById("iterations").value, 10);
   for(var i=0; i<iterations; i++) {
-    population.generationStep(mutationProbability, recombProbability, population.size());
+    population.generationStep(mutationProbability, recombProbability);
   }
 }
 
@@ -294,13 +295,13 @@ function iterate() {
 }
 
 function showStats() {
-  var stats = population.stats();
+  var stats = profileTracker.stats();
   document.getElementById("totalIterations").innerHTML = stats.totalIterations;
   document.getElementById("sid").innerHTML = stats.SID.toPrecision(5);
   document.getElementById("ci95").innerHTML = "[" + stats.CI95.map(function(e) { return e.toPrecision(5); }).join(', ') + "]";
   document.getElementById("varsid").innerHTML = stats.varSID.toPrecision(5);
 
-  document.getElementById("profiles").innerHTML = population.toCountsString();
+  document.getElementById("profiles").innerHTML = profileTracker.toCountsString();
 }
 
 function resize() {
