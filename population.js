@@ -47,7 +47,11 @@ var Population = function(populationSize, random) {
     var gene = individual.gene();
     var newGene = gene;
     var originIndividuals = {};
-    var origin = { clonedIndividual: key, individuals: originIndividuals };
+    var origin = {
+      clonedIndividual: key,
+      individuals: originIndividuals,
+      hasRecombination: false,
+    };
 
     function cloneGene() {
       if(newGene === gene) {
@@ -66,6 +70,7 @@ var Population = function(populationSize, random) {
         var sourceIndividual = population[random.nextIntCapped(populationSize)];
         newGene[i] = sourceIndividual.gene()[i];
         originIndividuals[sourceIndividual.key()] = false;
+        origin.hasRecombination = true;
       }
     }
     return new Individual(totalIterations, newGene, origin);

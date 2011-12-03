@@ -65,6 +65,7 @@ var ProfileTracker = function(population,
           if(link === undefined) {
             link = { source: profileInfoMap[k],
                      target: profileInfo,
+                     hasRecombination: origin.hasRecombination,
                      mutation: origin.individuals[k],
                      id: id,
                      value: 1 };

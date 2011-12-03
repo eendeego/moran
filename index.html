@@ -226,10 +226,10 @@ function redraw() {
       };
     })
     .style("stroke", function(d) {
-      if(d.value !== 1) {
-        return d.mutation ? 'hsl(0,100%,50%)' : 'hsl(120,50%,' + Math.min(100, 40 + d.value * 10) + '%)';
+      if(d.mutation) {
+        return d.hasRecombination ? 'hsl(120,100%,20%)' : 'hsl(0,100%,50%)';
       } else {
-        return d.mutation ? 'hsl(0,100%,50%)' : 'hsl(120,50%,' + Math.min(100, 40 + d.value * 10) + '%)';
+        return 'hsl(120,50%,' + Math.min(100, 40 + d.value * 10) + '%)';
       }
     });
 
