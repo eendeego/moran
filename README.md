@@ -1,0 +1,1 @@
+This is a quick hack demonstrating a [Moran Model](http://en.wikipedia.org/wiki/Moran_process).
